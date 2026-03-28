@@ -37,7 +37,9 @@ function mostrarAnimais(listaFiltrada = animais) {
     const btnRemover = card.querySelector("[data-remover-id]");
     if (btnRemover) {
       btnRemover.addEventListener("click", function () {
-        removerAnimal(Number(btnRemover.getAttribute("data-remover-id")));
+        const raw = btnRemover.getAttribute("data-remover-id");
+        if (raw === null || raw === "") return;
+        removerAnimal(Number(raw));
       });
     }
     lista.appendChild(card);
@@ -46,9 +48,11 @@ function mostrarAnimais(listaFiltrada = animais) {
 }
 
 async function removerAnimal(id) {
-  if (!id || !confirm("Remover este animal da lista?")) return;
+  const n = Number(id);
+  if (!Number.isFinite(n) || n < 0) return;
+  if (!confirm("Remover este animal da lista?")) return;
   try {
-    const res = await fetch(API + "/animais/" + id, { method: "DELETE" });
+    const res = await fetch(API + "/animais/" + n, { method: "DELETE" });
     if (!res.ok) throw new Error();
     await carregarAnimais();
   } catch {
