@@ -92,7 +92,16 @@ async function start() {
       console.log("PostgreSQL conectado");
     });
   } catch (err) {
-    console.error("Falha ao iniciar:", err);
+    if (err && err.code === "ENOTFOUND") {
+      console.error(
+        "Falha ao iniciar: hostname do banco não encontrado via DNS.",
+        "\nVerifique se o valor de DATABASE_URL está correto e ativo no Supabase.",
+        "\nSe sua rede não tiver IPv6, use a string de Connection Pooling (IPv4) no Dashboard do Supabase."
+      );
+      console.error("Erro original:", err.message);
+    } else {
+      console.error("Falha ao iniciar:", err);
+    }
     process.exit(1);
   }
 }
