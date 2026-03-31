@@ -7,7 +7,7 @@ const { Pool } = require("pg");
 const app = express();
 
 app.use(cors());
-app.use(express.json({ limit: "15mb" }));
+app.use(express.json({ limit: "5mb" }));
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
@@ -21,9 +21,16 @@ if (!databaseUrl) {
 const useSsl =
   !databaseUrl.includes("localhost") && !databaseUrl.includes("127.0.0.1");
 
+const sslConfig = useSsl
+  ? process.env.NODE_ENV === "development" &&
+    process.env.ALLOW_SELF_SIGNED_CERT === "true"
+    ? { rejectUnauthorized: false }
+    : true
+  : false;
+
 const pool = new Pool({
   connectionString: databaseUrl,
-  ssl: useSsl ? { rejectUnauthorized: false } : false,
+  ssl: sslConfig,
 });
 
 async function initDb() {
@@ -34,7 +41,21 @@ async function initDb() {
       especie VARCHAR(50) NOT NULL,
       porte VARCHAR(50) NOT NULL,
       descricao TEXT,
-      foto TEXT
+    const { nome, especie, porte, descricao, foto } = req.body;
+
+    if (
+      typeof nome !== "string" ||
+      nome.trim() === "" ||
+      typeof especie !== "string" ||
+      especie.trim() === "" ||
+      typeof porte !== "string" ||
+      porte.trim() === ""
+    ) {
+      return res.status(400).json({
+        erro:
+          "Campos obrigatórios ausentes ou inválidos: 'nome', 'especie' e 'porte' devem ser preenchidos.",
+      });
+    }
     );
   `);
 }

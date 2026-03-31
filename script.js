@@ -49,7 +49,7 @@ function mostrarAnimais(listaFiltrada = animais) {
 
 async function removerAnimal(id) {
   const n = Number(id);
-  if (!Number.isFinite(n) || n < 0) return;
+  if (!Number.isFinite(n) || n < 1) return;
   if (!confirm("Remover este animal da lista?")) return;
   try {
     const res = await fetch(API + "/animais/" + n, { method: "DELETE" });
