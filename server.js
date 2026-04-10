@@ -21,11 +21,12 @@ if (!databaseUrl) {
 const useSsl =
   !databaseUrl.includes("localhost") && !databaseUrl.includes("127.0.0.1");
 
+const allowSelfSignedCert = process.env.ALLOW_SELF_SIGNED_CERT === "true";
+
 const sslConfig = useSsl
-  ? process.env.NODE_ENV === "development" &&
-    process.env.ALLOW_SELF_SIGNED_CERT === "true"
+  ? allowSelfSignedCert
     ? { rejectUnauthorized: false }
-    : true
+    : { rejectUnauthorized: true }
   : false;
 
 const pool = new Pool({
@@ -41,6 +42,13 @@ async function initDb() {
       especie VARCHAR(50) NOT NULL,
       porte VARCHAR(50) NOT NULL,
       descricao TEXT,
+      foto TEXT
+    );
+  `);
+}
+
+app.post("/animais", async (req, res) => {
+  try {
     const { nome, especie, porte, descricao, foto } = req.body;
 
     if (
@@ -56,13 +64,7 @@ async function initDb() {
           "Campos obrigatórios ausentes ou inválidos: 'nome', 'especie' e 'porte' devem ser preenchidos.",
       });
     }
-    );
-  `);
-}
 
-app.post("/animais", async (req, res) => {
-  try {
-    const { nome, especie, porte, descricao, foto } = req.body;
     const result = await pool.query(
       `INSERT INTO animais (nome, especie, porte, descricao, foto)
        VALUES ($1, $2, $3, $4, $5)
