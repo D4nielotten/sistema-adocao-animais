@@ -2,6 +2,10 @@
 
 Aplicação web para cadastrar, listar e remover animais disponíveis para adoção.
 
+## Guia de instalação detalhado
+
+- Veja o passo a passo completo em [README-INSTALACAO.md](README-INSTALACAO.md).
+
 O projeto tem duas partes:
 - Front-end em HTML, CSS e JavaScript.
 - Back-end em Node.js com Express, conectado ao PostgreSQL.
