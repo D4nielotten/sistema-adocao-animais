@@ -1,6 +1,6 @@
 # Guia de Instalação das Tecnologias
 
-Este guia explica como instalar as tecnologias usadas no projeto **Sistema de Adoção de Animais**.
+Este guia explica como instalar as tecnologias usadas no projeto Sistema de Adoção de Animais.
 
 ## Tecnologias utilizadas
 
@@ -20,12 +20,10 @@ Este guia explica como instalar as tecnologias usadas no projeto **Sistema de Ad
 git --version
 ```
 
-Se aparecer a versão, o Git está instalado.
-
 ## 2. Instalar o Node.js e npm
 
 1. Acesse: https://nodejs.org/
-2. Baixe a versão **LTS**.
+2. Baixe a versão LTS.
 3. Instale normalmente.
 4. Verifique no terminal:
 
@@ -34,15 +32,13 @@ node -v
 npm -v
 ```
 
-Se os dois comandos retornarem versões, está tudo certo.
-
 ## 3. Instalar o PostgreSQL
 
 1. Acesse: https://www.postgresql.org/download/
 2. Baixe e instale a versão recomendada para seu sistema.
 3. Durante a instalação:
-- Defina uma senha para o usuário `postgres`.
-- Anote a porta padrão (normalmente `5432`).
+- Defina uma senha para o usuário postgres.
+- Anote a porta padrão (normalmente 5432).
 4. Verifique se o serviço está em execução.
 
 ## 4. Clonar o projeto
@@ -64,7 +60,7 @@ npm install
 
 ## 6. Configurar variável de ambiente
 
-Crie um arquivo `.env` na raiz do projeto com:
+Crie um arquivo .env na raiz do projeto com:
 
 ```env
 DATABASE_URL=postgresql://USUARIO:SENHA@HOST:PORTA/NOME_DO_BANCO
@@ -92,15 +88,11 @@ API disponível em:
 
 - http://localhost:3000
 
-## 8. Abrir a página inicial
-
-Abra o arquivo `idex.html` no navegador.
-
 ## Solução rápida de problemas
 
-### `DATABASE_URL` não definida
+### DATABASE_URL não definida
 
-- Confira se o arquivo `.env` está na raiz do projeto.
+- Confira se o arquivo .env está na raiz do projeto.
 - Verifique se a variável foi escrita corretamente.
 - Reinicie o servidor.
 
@@ -109,6 +101,6 @@ Abra o arquivo `idex.html` no navegador.
 - Verifique se o PostgreSQL está ligado.
 - Confira usuário, senha, host, porta e nome do banco.
 
-### Porta `3000` ocupada
+### Porta 3000 ocupada
 
-- Finalize o processo que está usando essa porta ou altere a porta no servidor.
+- Finalize o processo que está usando essa porta ou altere a variável PORT no .env.
