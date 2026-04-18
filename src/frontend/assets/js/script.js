@@ -1,5 +1,6 @@
-const API = window.location.origin && window.location.origin.startsWith("http")
-  ? window.location.origin
+const origemAtual = window.location.origin || "";
+const API = origemAtual.includes("localhost:3000") || origemAtual.includes("127.0.0.1:3000")
+  ? origemAtual
   : "http://localhost:3000";
 
 let animais = [];
@@ -140,10 +141,13 @@ if (formAdotante) {
   });
 }
 
-function filtrar(tipo) {
+async function filtrar(tipo) {
   if (tipo === "todos") {
-    mostrarAnimais();
+    await carregarAnimais();
     return;
+  }
+  if (animais.length === 0) {
+    await carregarAnimais();
   }
   let filtrados = animais.filter(function (a) {
     return a.especie === tipo;
@@ -151,7 +155,10 @@ function filtrar(tipo) {
   mostrarAnimais(filtrados);
 }
 
-function filtrarPorte(porte) {
+async function filtrarPorte(porte) {
+  if (animais.length === 0) {
+    await carregarAnimais();
+  }
   let filtrados = animais.filter(function (a) {
     return a.porte === porte;
   });
@@ -176,8 +183,8 @@ async function carregarAnimais() {
     if (!res.ok) throw new Error();
     animais = await res.json();
     mostrarAnimais();
-  } catch {
-    console.error("Não foi possível carregar os animais do servidor.");
+  } catch (err) {
+    console.error("Não foi possível carregar os animais do servidor.", err);
   }
 }
 
