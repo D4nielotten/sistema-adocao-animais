@@ -2,9 +2,32 @@
 
 Aplicação web para cadastrar, listar e remover animais disponíveis para adoção.
 
-O projeto tem duas partes:
-- Front-end em HTML, CSS e JavaScript.
-- Back-end em Node.js com Express, conectado ao PostgreSQL.
+## Estrutura Moderna do Projeto
+
+Este repositório foi organizado em um padrão acadêmico moderno, com separação entre front-end, back-end e documentação.
+
+```text
+sistema-adocao-animais/
+├─ src/
+│  ├─ backend/
+│  │  └─ server.js
+│  └─ frontend/
+│     ├─ index.html
+│     └─ assets/
+│        ├─ css/
+│        │  └─ style.css
+│        └─ js/
+│           └─ script.js
+├─ docs/
+│  └─ README-INSTALACAO.md
+├─ .env
+├─ package.json
+└─ README.md
+```
+
+## Guia de instalação detalhado
+
+- Veja o passo a passo completo em [docs/README-INSTALACAO.md](docs/README-INSTALACAO.md).
 
 ## Objetivo do projeto
 
@@ -23,13 +46,21 @@ Facilitar o cadastro de cães e gatos para adoção responsável, com:
 - JavaScript (front-end)
 - HTML e CSS
 
-## Estrutura dos arquivos
+## Como executar
 
-- idex.html: interface principal da aplicação.
-- style.css: estilos visuais.
-- script.js: lógica do front-end e chamadas para a API.
-- server.js: servidor Node.js e rotas da API.
-- package.json: dependências e scripts do projeto.
+1. Instale dependências:
+
+    npm install
+
+2. Configure o arquivo .env na raiz.
+
+3. Inicie a aplicação:
+
+    npm start
+
+4. Acesse no navegador:
+
+- http://localhost:3000
 
 ## Pré-requisitos
 
@@ -87,10 +118,6 @@ Se seu banco usa certificado próprio (self-signed), adicione também:
 Se estiver tudo certo, a API sobe em:
 - http://localhost:3000
 
-### 7) Abrir o front-end
-
-Abra o arquivo idex.html no navegador (duplo clique no arquivo).
-
 ## Endpoints da API
 
 Base URL:
@@ -133,6 +160,34 @@ Se o projeto no GitHub mudou e você quer trazer as novidades:
 
 Se houver conflito, o Git avisará quais arquivos precisam de ajuste manual.
 
+## Protocolo seguro para trocar de branch
+
+Para evitar perder alterações ao usar checkout, siga esta sequência:
+
+### 1) Verificar alterações pendentes
+
+    git status
+
+### 2) Se quiser manter no histórico, commitar antes de trocar
+
+    git add .
+    git commit -m "wip: checkpoint antes de trocar branch"
+
+### 3) Se não quiser commit, guardar temporariamente com stash
+
+    git stash push -m "checkpoint local"
+
+### 4) Trocar de branch com segurança
+
+    git checkout nome-da-branch
+
+### 5) Se usou stash, restaurar alterações
+
+    git stash list
+    git stash pop
+
+Dica: prefira sempre trocar de branch com o working tree limpo (sem arquivos modificados).
+
 ## Problemas comuns e soluções
 
 ### Erro ao rodar npm start
@@ -150,7 +205,7 @@ Se aparecer mensagem dizendo que DATABASE_URL não está definida:
 
 ### Porta 3000 ocupada
 
-Feche o processo que já está usando a porta 3000 ou altere a porta no server.js.
+Feche o processo que já está usando a porta 3000 ou altere a porta em src/backend/server.js.
 
 - Implementar paginação na listagem de animais.
 - Melhorar validação de imagens no front-end.
