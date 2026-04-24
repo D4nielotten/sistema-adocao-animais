@@ -26,7 +26,7 @@ git --version
 2. Baixe a versão LTS.
 3. Instale normalmente.
 4. Verifique no terminal:
-5. instale dotenv com: npm install dotenv
+5. Instale as dependencias: npm install
 
 ```bash
 node -v

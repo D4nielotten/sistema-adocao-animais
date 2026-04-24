@@ -20,7 +20,7 @@ const logger = {
 
 const ESPECIES_VALIDAS = ["cao", "gato"];
 const PORTES_VALIDOS = ["Pequeno", "Médio", "Grande"];
-const TAMANO_MAXIMO_IMAGEM = 2 * 1024 * 1024;
+const TAMANHO_MAXIMO_IMAGEM = 2 * 1024 * 1024;
 const TAMANHO_MAXIMO_NOME = 100;
 const TAMANHO_MAXIMO_DESCRICAO = 500;
 const TAMANHO_MINIMO_NOME = 3;
@@ -248,7 +248,7 @@ app.post("/animais", async (req, res) => {
       }
 
       const estimatedSize = (foto.length * 3) / 4;
-      if (estimatedSize > TAMANO_MAXIMO_IMAGEM) {
+      if (estimatedSize > TAMANHO_MAXIMO_IMAGEM) {
         logger.warn(`POST /animais - Imagem no tamanho excedido (${(estimatedSize / 1024 / 1024).toFixed(2)}MB max 2MB)`);
         return res.status(400).json({
           erro: "Imagem é muito grande. Máximo permitido: 2MB.",
