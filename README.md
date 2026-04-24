@@ -152,9 +152,6 @@ Se aparecer mensagem dizendo que DATABASE_URL não está definida:
 
 Feche o processo que já está usando a porta 3000 ou altere a porta no server.js.
 
-## Melhorias futuras
-
-- Adicionar autenticação para administradores.
 - Implementar paginação na listagem de animais.
 - Melhorar validação de imagens no front-end.
 - Criar testes automatizados.
