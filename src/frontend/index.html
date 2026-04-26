@@ -55,8 +55,10 @@
 
   <form id="formAdotante">
     <input type="text" id="nomeAdotante" placeholder="Seu nome" required>
-    <input type="text" id="telefoneAdotante" placeholder="Telefone" required>
-    <input type="text" id="animalInteresse" placeholder="Animal de interesse">
+    <input type="text" id="telefoneAdotante" placeholder="Telefone (11) 91234-5678" maxlength="15" required>
+    <select id="animalInteresse" required>
+      <option value="" selected disabled>Selecione o animal de interesse</option>
+    </select>
 
     <button type="submit">Enviar interesse</button>
   </form>
@@ -68,6 +70,6 @@
   <input type="text" id="mensagem" placeholder="Digite sua mensagem">
   <button onclick="enviarMensagem()">Enviar</button>
 
-  <script src="assets/js/script.js"></script>
+  <script src="assets/js/script.js?v=20260418b"></script>
 </body>
 </html>

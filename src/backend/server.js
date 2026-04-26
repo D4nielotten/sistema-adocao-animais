@@ -5,7 +5,7 @@ const cors = require("cors");
 const { Pool } = require("pg");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 const FRONTEND_DIR = path.resolve(__dirname, "../frontend");
 
 app.use(cors());
@@ -20,11 +20,33 @@ const logger = {
 
 const ESPECIES_VALIDAS = ["cao", "gato"];
 const PORTES_VALIDOS = ["Pequeno", "Médio", "Grande"];
-const TAMANO_MAXIMO_IMAGEM = 2 * 1024 * 1024;
+const TAMANHO_MAXIMO_IMAGEM = 2 * 1024 * 1024;
 const TAMANHO_MAXIMO_NOME = 100;
 const TAMANHO_MAXIMO_DESCRICAO = 500;
 const TAMANHO_MINIMO_NOME = 3;
 const TAMANHO_MAXIMO_TELEFONE = 20;
+
+function formatarTelefone(telefone) {
+  const apenasDigitos = String(telefone || "").replace(/\D/g, "");
+
+  // Aceita números com DDI do Brasil e remove o prefixo 55 para formatar.
+  const digitosSemDdi =
+    apenasDigitos.length >= 12 &&
+    apenasDigitos.length <= 13 &&
+    apenasDigitos.startsWith("55")
+      ? apenasDigitos.slice(2)
+      : apenasDigitos;
+
+  if (digitosSemDdi.length === 11) {
+    return `(${digitosSemDdi.slice(0, 2)}) ${digitosSemDdi.slice(2, 7)}-${digitosSemDdi.slice(7)}`;
+  }
+
+  if (digitosSemDdi.length === 10) {
+    return `(${digitosSemDdi.slice(0, 2)}) ${digitosSemDdi.slice(2, 6)}-${digitosSemDdi.slice(6)}`;
+  }
+
+  return null;
+}
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
@@ -120,8 +142,16 @@ app.post("/interesses", async (req, res) => {
       });
     }
 
-    if (telefoneTrimmed.length > TAMANHO_MAXIMO_TELEFONE) {
-      logger.warn("POST /interesses - Telefone muito longo");
+    const telefoneFormatado = formatarTelefone(telefoneTrimmed);
+    if (!telefoneFormatado) {
+      logger.warn("POST /interesses - Telefone inválido");
+      return res.status(400).json({
+        erro: "Telefone inválido. Use um número com DDD no padrão brasileiro.",
+      });
+    }
+
+    if (telefoneFormatado.length > TAMANHO_MAXIMO_TELEFONE) {
+      logger.warn("POST /interesses - Telefone formatado muito longo");
       return res.status(400).json({
         erro: `Telefone não pode exceder ${TAMANHO_MAXIMO_TELEFONE} caracteres.`,
       });
@@ -131,7 +161,7 @@ app.post("/interesses", async (req, res) => {
       `INSERT INTO interesses_adocao (nome, telefone, animal_interesse)
        VALUES ($1, $2, $3)
        RETURNING id, nome, telefone, animal_interesse AS "animalInteresse", criado_em AS "criadoEm"`,
-      [nomeTrimmed, telefoneTrimmed, animalInteresseTrimmed || null]
+      [nomeTrimmed, telefoneFormatado, animalInteresseTrimmed || null]
     );
 
     logger.info(`POST /interesses - Interesse salvo com sucesso (ID: ${result.rows[0].id})`);
@@ -218,7 +248,7 @@ app.post("/animais", async (req, res) => {
       }
 
       const estimatedSize = (foto.length * 3) / 4;
-      if (estimatedSize > TAMANO_MAXIMO_IMAGEM) {
+      if (estimatedSize > TAMANHO_MAXIMO_IMAGEM) {
         logger.warn(`POST /animais - Imagem no tamanho excedido (${(estimatedSize / 1024 / 1024).toFixed(2)}MB max 2MB)`);
         return res.status(400).json({
           erro: "Imagem é muito grande. Máximo permitido: 2MB.",
@@ -255,11 +285,38 @@ app.post("/animais", async (req, res) => {
 
 app.get("/animais", async (req, res) => {
   try {
-    logger.info("GET /animais - Listando animais");
+    const especie = typeof req.query.especie === "string" ? req.query.especie.trim() : "";
+    const porte = typeof req.query.porte === "string" ? req.query.porte.trim() : "";
+    const nome = typeof req.query.nome === "string" ? req.query.nome.trim() : "";
+
+    logger.info("GET /animais - Listando animais", { especie, porte, nome });
+
+    const filtros = [];
+    const valores = [];
+
+    if (especie) {
+      valores.push(especie);
+      filtros.push(`LOWER(especie) = LOWER($${valores.length})`);
+    }
+
+    if (porte) {
+      valores.push(porte);
+      filtros.push(`LOWER(porte) = LOWER($${valores.length})`);
+    }
+
+    if (nome) {
+      valores.push(`%${nome}%`);
+      filtros.push(`nome ILIKE $${valores.length}`);
+    }
+
+    const whereClause = filtros.length > 0 ? `WHERE ${filtros.join(" AND ")}` : "";
+
     const result = await pool.query(
       `SELECT id, nome, especie, porte, descricao, foto
        FROM animais
-       ORDER BY id ASC`
+       ${whereClause}
+       ORDER BY id ASC`,
+      valores
     );
     logger.info(`GET /animais - Retornados ${result.rows.length} animal(is)`);
     res.json(result.rows);
@@ -312,10 +369,27 @@ app.get("/", (req, res) => {
 async function start() {
   try {
     await initDb();
-    app.listen(PORT, () => {
-      logger.info(`Servidor iniciado com sucesso em http://localhost:${PORT}`);
-      logger.info("PostgreSQL conectado e banco de dados pronto");
-    });
+
+    const iniciarServidor = (porta, tentativasRestantes = 5) => {
+      const server = app.listen(porta, () => {
+        logger.info(`Servidor iniciado com sucesso em http://localhost:${porta}`);
+        logger.info("PostgreSQL conectado e banco de dados pronto");
+      });
+
+      server.on("error", (err) => {
+        if (err && err.code === "EADDRINUSE" && tentativasRestantes > 0) {
+          const proximaPorta = porta + 1;
+          logger.warn(`Porta ${porta} em uso. Tentando porta ${proximaPorta}...`);
+          iniciarServidor(proximaPorta, tentativasRestantes - 1);
+          return;
+        }
+
+        logger.error("Falha ao iniciar servidor", err);
+        process.exit(1);
+      });
+    };
+
+    iniciarServidor(PORT);
   } catch (err) {
     if (err && err.code === "ENOTFOUND") {
       logger.error(
