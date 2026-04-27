@@ -1,11 +1,52 @@
-const API = window.location.origin && window.location.origin.startsWith("http")
-  ? window.location.origin
-  : "http://localhost:3000";
+const origemAtual = window.location.origin || "";
+const CANDIDATAS_API = [origemAtual];
+
+for (let porta = 3000; porta <= 3010; porta += 1) {
+  CANDIDATAS_API.push("http://localhost:" + porta);
+  CANDIDATAS_API.push("http://127.0.0.1:" + porta);
+}
+
+const CANDIDATAS_API_UNICAS = CANDIDATAS_API.filter(function (url, idx, arr) {
+  return !!url && arr.indexOf(url) === idx;
+});
+
+let API = null;
+
+async function obterApiBase() {
+  if (API) return API;
+
+  for (let i = 0; i < CANDIDATAS_API_UNICAS.length; i += 1) {
+    const base = CANDIDATAS_API_UNICAS[i];
+    try {
+      const res = await fetch(base + "/health");
+      if (res.ok) {
+        API = base;
+        return API;
+      }
+    } catch (_) {
+      // Tenta a próxima URL candidata.
+    }
+  }
+
+  API = "http://localhost:3000";
+  return API;
+}
 
 let animais = [];
 
 const lista = document.getElementById("listaAnimais");
 const contador = document.getElementById("contador");
+const selectAnimalInteresse = document.getElementById("animalInteresse");
+
+function formatarTelefoneBrasil(valor) {
+  const digitos = String(valor || "").replace(/\D/g, "").slice(0, 11);
+  if (digitos.length <= 2) return digitos;
+  if (digitos.length <= 6) return "(" + digitos.slice(0, 2) + ") " + digitos.slice(2);
+  if (digitos.length <= 10) {
+    return "(" + digitos.slice(0, 2) + ") " + digitos.slice(2, 6) + "-" + digitos.slice(6);
+  }
+  return "(" + digitos.slice(0, 2) + ") " + digitos.slice(2, 7) + "-" + digitos.slice(7);
+}
 
 function atualizarContador() {
   if (contador) {
@@ -14,9 +55,44 @@ function atualizarContador() {
   }
 }
 
+function atualizarOpcoesAnimalInteresse() {
+  if (!selectAnimalInteresse) return;
+
+  selectAnimalInteresse.innerHTML = "";
+
+  const opcaoInicial = document.createElement("option");
+  opcaoInicial.value = "";
+  opcaoInicial.textContent = "Selecione o animal de interesse";
+  opcaoInicial.disabled = true;
+  opcaoInicial.selected = true;
+  selectAnimalInteresse.appendChild(opcaoInicial);
+
+  if (!Array.isArray(animais) || animais.length === 0) {
+    const opcaoVazia = document.createElement("option");
+    opcaoVazia.value = "";
+    opcaoVazia.textContent = "Nenhum animal cadastrado";
+    opcaoVazia.disabled = true;
+    selectAnimalInteresse.appendChild(opcaoVazia);
+    return;
+  }
+
+  animais.forEach(function (animal) {
+    const opcao = document.createElement("option");
+    opcao.value = animal.nome;
+    opcao.textContent = animal.nome;
+    selectAnimalInteresse.appendChild(opcao);
+  });
+}
+
 function mostrarAnimais(listaFiltrada = animais) {
   if (!lista) return;
   lista.innerHTML = "";
+  if (!Array.isArray(listaFiltrada) || listaFiltrada.length === 0) {
+    lista.innerHTML = "<p>Nenhum animal encontrado para este filtro.</p>";
+    atualizarContador();
+    atualizarOpcoesAnimalInteresse();
+    return;
+  }
   listaFiltrada.forEach(function (animal) {
     let card = document.createElement("div");
     card.className = "card";
@@ -47,6 +123,7 @@ function mostrarAnimais(listaFiltrada = animais) {
     lista.appendChild(card);
   });
   atualizarContador();
+  atualizarOpcoesAnimalInteresse();
 }
 
 async function removerAnimal(id) {
@@ -54,7 +131,8 @@ async function removerAnimal(id) {
   if (!Number.isFinite(n) || n < 1) return;
   if (!confirm("Remover este animal da lista?")) return;
   try {
-    const res = await fetch(API + "/animais/" + n, { method: "DELETE" });
+    const apiBase = await obterApiBase();
+    const res = await fetch(apiBase + "/animais/" + n, { method: "DELETE" });
     if (!res.ok) throw new Error();
     await carregarAnimais();
   } catch {
@@ -80,7 +158,8 @@ if (form) {
     leitor.onload = async function (evento) {
       let imagemBase64 = evento.target.result;
       try {
-        const res = await fetch(API + "/animais", {
+        const apiBase = await obterApiBase();
+        const res = await fetch(apiBase + "/animais", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -124,7 +203,8 @@ if (formAdotante) {
     };
 
     try {
-      const res = await fetch(API + "/interesses", {
+      const apiBase = await obterApiBase();
+      const res = await fetch(apiBase + "/interesses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -138,24 +218,27 @@ if (formAdotante) {
       alert("Não foi possível registrar seu interesse agora. Tente novamente.");
     }
   });
+
+  const telefoneAdotanteInput = document.getElementById("telefoneAdotante");
+  if (telefoneAdotanteInput) {
+    telefoneAdotanteInput.addEventListener("input", function (e) {
+      const alvo = e.target;
+      if (!alvo) return;
+      alvo.value = formatarTelefoneBrasil(alvo.value);
+    });
+  }
 }
 
-function filtrar(tipo) {
+async function filtrar(tipo) {
   if (tipo === "todos") {
-    mostrarAnimais();
+    await carregarAnimais();
     return;
   }
-  let filtrados = animais.filter(function (a) {
-    return a.especie === tipo;
-  });
-  mostrarAnimais(filtrados);
+  await carregarAnimais({ especie: tipo });
 }
 
-function filtrarPorte(porte) {
-  let filtrados = animais.filter(function (a) {
-    return a.porte === porte;
-  });
-  mostrarAnimais(filtrados);
+async function filtrarPorte(porte) {
+  await carregarAnimais({ porte: porte });
 }
 
 function enviarMensagem() {
@@ -170,14 +253,24 @@ function enviarMensagem() {
   campo.value = "";
 }
 
-async function carregarAnimais() {
+async function carregarAnimais(filtros = {}) {
   try {
-    const res = await fetch(API + "/animais");
+    const apiBase = await obterApiBase();
+    const params = new URLSearchParams();
+    if (filtros.especie) params.append("especie", filtros.especie);
+    if (filtros.porte) params.append("porte", filtros.porte);
+    if (filtros.nome) params.append("nome", filtros.nome);
+
+    const url = params.toString() ? apiBase + "/animais?" + params.toString() : apiBase + "/animais";
+    const res = await fetch(url);
     if (!res.ok) throw new Error();
     animais = await res.json();
     mostrarAnimais();
-  } catch {
-    console.error("Não foi possível carregar os animais do servidor.");
+  } catch (err) {
+    console.error("Não foi possível carregar os animais do servidor.", err);
+    if (lista) {
+      lista.innerHTML = "<p>Não foi possível carregar os animais. Verifique se o servidor está rodando.</p>";
+    }
   }
 }
 
