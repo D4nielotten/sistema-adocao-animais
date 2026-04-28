@@ -129,35 +129,38 @@
     </div>
   </section>
 
+  <!-- Seção Quero Adotar -->
+  <section class="container">
+    <div class="section-title">
+      <h2>💕 Quero Adotar</h2>
+      <p>Manifeste seu interesse em adotar um animal</p>
+    </div>
+
+    <form id="formAdotante" class="form-card">
+      <div class="form-group">
+        <input type="text" id="nomeAdotante" placeholder="Seu nome completo" required>
+      </div>
+
+      <div class="form-group">
+        <input type="text" id="telefoneAdotante" placeholder="Telefone (11) 91234-5678" maxlength="15" required>
+      </div>
+
+      <div class="form-group">
+        <select id="animalInteresse" required>
+          <option value="" selected disabled>Selecione o animal de interesse</option>
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-primary">
+        <i class="fas fa-heart"></i> Enviar Interesse
+      </button>
+    </form>
+  </section>
+
   <!-- Footer -->
   <footer class="footer">
     <p>&copy; 2026 Sistema de Adoção de Animais. Todos os direitos reservados. 🐾</p>
   </footer>
-
-  <script src="assets/js/script.js"></script>
-</body>
-</html>
-
-  <div class="container" id="listaAnimais"></div>
-
-  <h2>Quero adotar</h2>
-
-  <form id="formAdotante">
-    <input type="text" id="nomeAdotante" placeholder="Seu nome" required>
-    <input type="text" id="telefoneAdotante" placeholder="Telefone (11) 91234-5678" maxlength="15" required>
-    <select id="animalInteresse" required>
-      <option value="" selected disabled>Selecione o animal de interesse</option>
-    </select>
-
-    <button type="submit">Enviar interesse</button>
-  </form>
-
-  <h2>Chat com o protetor</h2>
-
-  <div id="chatBox" style="border:1px solid #ccc; padding:10px; height:200px; overflow-y:auto;"></div>
-
-  <input type="text" id="mensagem" placeholder="Digite sua mensagem">
-  <button onclick="enviarMensagem()">Enviar</button>
 
   <script src="assets/js/script.js?v=20260418b"></script>
 </body>
