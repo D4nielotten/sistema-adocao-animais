@@ -48,6 +48,47 @@ function formatarTelefoneBrasil(valor) {
   return "(" + digitos.slice(0, 2) + ") " + digitos.slice(2, 7) + "-" + digitos.slice(7);
 }
 
+// Função para redimensionar imagens grandes
+function redimensionarImagem(arquivo, larguraMaxima = 800, alturaMaxima = 600, qualidade = 0.8) {
+  return new Promise((resolve) => {
+    const leitor = new FileReader();
+    
+    leitor.onload = (evento) => {
+      const img = new Image();
+      
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let novaLargura = img.width;
+        let novaAltura = img.height;
+        
+        // Calcular novas dimensões mantendo proporção
+        if (img.width > larguraMaxima || img.height > alturaMaxima) {
+          const razaoLargura = larguraMaxima / img.width;
+          const razaoAltura = alturaMaxima / img.height;
+          const escala = Math.min(razaoLargura, razaoAltura);
+          
+          novaLargura = img.width * escala;
+          novaAltura = img.height * escala;
+        }
+        
+        canvas.width = novaLargura;
+        canvas.height = novaAltura;
+        
+        const contexto = canvas.getContext('2d');
+        contexto.drawImage(img, 0, 0, novaLargura, novaAltura);
+        
+        // Converter para base64 com qualidade reduzida
+        const imagemRedimensionada = canvas.toDataURL('image/jpeg', qualidade);
+        resolve(imagemRedimensionada);
+      };
+      
+      img.src = evento.target.result;
+    };
+    
+    leitor.readAsDataURL(arquivo);
+  });
+}
+
 function atualizarContador() {
   if (contador) {
     contador.innerHTML =
@@ -142,7 +183,7 @@ async function removerAnimal(id) {
 
 const form = document.getElementById("formAnimal");
 if (form) {
-  form.addEventListener("submit", function (e) {
+  form.addEventListener("submit", async function (e) {
     e.preventDefault();
     let nome = document.getElementById("nome").value;
     let especie = document.getElementById("especie").value;
@@ -154,31 +195,30 @@ if (form) {
       alert("Escolha uma imagem");
       return;
     }
-    let leitor = new FileReader();
-    leitor.onload = async function (evento) {
-      let imagemBase64 = evento.target.result;
-      try {
-        const apiBase = await obterApiBase();
-        const res = await fetch(apiBase + "/animais", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            nome,
-            especie,
-            porte,
-            descricao,
-            foto: imagemBase64,
-          }),
-        });
-        if (!res.ok) throw new Error();
-        form.reset();
-        await carregarAnimais();
-        alert("Animal cadastrado!");
-      } catch {
-        alert("Erro ao cadastrar. Verifique se o servidor e o PostgreSQL estão rodando.");
-      }
-    };
-    leitor.readAsDataURL(arquivo);
+    
+    try {
+      // Redimensionar a imagem antes de enviar
+      let imagemRedimensionada = await redimensionarImagem(arquivo, 800, 600, 0.8);
+      
+      const apiBase = await obterApiBase();
+      const res = await fetch(apiBase + "/animais", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nome,
+          especie,
+          porte,
+          descricao,
+          foto: imagemRedimensionada,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      form.reset();
+      await carregarAnimais();
+      alert("Animal cadastrado!");
+    } catch {
+      alert("Erro ao cadastrar. Verifique se o servidor e o PostgreSQL estão rodando.");
+    }
   });
 }
 
