@@ -89,6 +89,29 @@ function redimensionarImagem(arquivo, larguraMaxima = 800, alturaMaxima = 600, q
   });
 }
 
+// Preview de imagem no formulário
+const fotoInput = document.getElementById("foto");
+const previewFoto = document.getElementById("previewFoto");
+
+if (fotoInput && previewFoto) {
+  fotoInput.addEventListener("change", function(e) {
+    const arquivo = e.target.files[0];
+    
+    if (arquivo) {
+      const leitor = new FileReader();
+      
+      leitor.onload = function(evento) {
+        previewFoto.src = evento.target.result;
+        previewFoto.classList.add("active");
+      };
+      
+      leitor.readAsDataURL(arquivo);
+    } else {
+      previewFoto.classList.remove("active");
+    }
+  });
+}
+
 function atualizarContador() {
   if (contador) {
     contador.innerHTML =
@@ -147,11 +170,17 @@ function mostrarAnimais(listaFiltrada = animais) {
       <p><b>Porte:</b> ${animal.porte}</p>
       <p>${animal.descricao || ""}</p>
 
-      <a href="https://wa.me/5511999999999?text=Olá! Tenho interesse em adotar ${animal.nome}" target="_blank">
-        <button>Falar com o protetor</button>
-      </a>
+      <div class="card-buttons">
+        <a href="https://wa.me/5511999999999?text=Olá! Tenho interesse em adotar ${animal.nome}" target="_blank" class="btn-link">
+          <button class="btn btn-contact">
+            <i class="fab fa-whatsapp"></i> Falar com o protetor
+          </button>
+        </a>
 
-      <button type="button" data-remover-id="${animal.id}">Remover</button>
+        <button type="button" class="btn btn-delete" data-remover-id="${animal.id}">
+          <i class="fas fa-trash"></i> Remover
+        </button>
+      </div>
     `;
     const btnRemover = card.querySelector("[data-remover-id]");
     if (btnRemover) {
