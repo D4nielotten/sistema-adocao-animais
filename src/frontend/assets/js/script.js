@@ -59,8 +59,12 @@ function authAdmin() {
 
 const authStatus = document.getElementById("authStatus");
 const authLink = document.getElementById("authLink");
+const registerLink = document.getElementById("registerLink");
+const profileLink = document.getElementById("profileLink");
 const logoutBtn = document.getElementById("logoutBtn");
 const adminSection = document.getElementById("adminSection");
+const loginModal = document.getElementById("loginModal");
+const loginModalClose = document.getElementById("loginModalClose");
 
 function atualizarAuthUI() {
   if (authStatus) {
@@ -68,6 +72,12 @@ function atualizarAuthUI() {
   }
   if (authLink) {
     authLink.classList.toggle("is-hidden", !!auth);
+  }
+  if (registerLink) {
+    registerLink.classList.toggle("is-hidden", !!auth);
+  }
+  if (profileLink) {
+    profileLink.classList.toggle("is-hidden", !auth);
   }
   if (logoutBtn) {
     logoutBtn.classList.toggle("is-hidden", !auth);
@@ -85,6 +95,46 @@ if (logoutBtn) {
     mostrarAnimais();
   });
 }
+
+function exigirLoginOuAvisar() {
+  if (auth) return true;
+  if (loginModal) {
+    loginModal.classList.remove("modal-hidden");
+  }
+  return false;
+}
+
+if (loginModalClose && loginModal) {
+  loginModalClose.addEventListener("click", function () {
+    loginModal.classList.add("modal-hidden");
+  });
+}
+
+if (loginModal) {
+  loginModal.addEventListener("click", function (event) {
+    if (event.target === loginModal) {
+      loginModal.classList.add("modal-hidden");
+    }
+  });
+}
+
+document.addEventListener("keydown", function (event) {
+  if (event.key === "Escape" && loginModal && !loginModal.classList.contains("modal-hidden")) {
+    loginModal.classList.add("modal-hidden");
+  }
+});
+
+document.addEventListener("click", function (event) {
+  const alvo = event.target.closest("button, a.btn, .btn-link");
+  if (!alvo) return;
+  if (auth) return;
+  if (alvo.classList.contains("btn-filter")) return;
+  if (alvo.dataset.public === "true") return;
+  if (alvo.id === "authLink" || alvo.id === "registerLink") return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  exigirLoginOuAvisar();
+});
 
 let animais = [];
 
@@ -330,6 +380,8 @@ const formAdotante = document.getElementById("formAdotante");
 if (formAdotante) {
   formAdotante.addEventListener("submit", async function (e) {
     e.preventDefault();
+
+    if (!exigirLoginOuAvisar()) return;
 
     const nomeAdotante = document.getElementById("nomeAdotante");
     const telefoneAdotante = document.getElementById("telefoneAdotante");

@@ -19,7 +19,9 @@
       </div>
       <div class="nav-actions">
         <span id="authStatus" class="auth-status"></span>
-        <a id="authLink" class="btn btn-secondary" href="login.html">Login</a>
+        <a id="authLink" class="btn btn-secondary" href="login.html" data-public="true">Login</a>
+        <a id="registerLink" class="btn btn-secondary" href="login.html#register" data-public="true">Criar conta</a>
+        <a id="profileLink" class="btn btn-secondary" href="profile.html">Meu perfil</a>
         <button id="logoutBtn" class="btn btn-secondary" type="button">Sair</button>
       </div>
     </div>
@@ -166,6 +168,17 @@
   <footer class="footer">
     <p>&copy; 2026 Sistema de Adoção de Animais. Todos os direitos reservados. 🐾</p>
   </footer>
+
+  <div id="loginModal" class="modal modal-hidden" role="dialog" aria-modal="true" aria-labelledby="loginModalTitle">
+    <div class="modal-content">
+      <h3 id="loginModalTitle">Faça login para continuar</h3>
+      <p>Entre com sua conta para acessar esta funcionalidade.</p>
+      <div class="modal-actions">
+        <a class="btn btn-primary" href="login.html">Ir para login</a>
+        <button id="loginModalClose" class="btn btn-secondary" type="button">Fechar</button>
+      </div>
+    </div>
+  </div>
 
   <script src="assets/js/script.js?v=20260418b"></script>
 </body>
