@@ -32,6 +32,110 @@ async function obterApiBase() {
   return API;
 }
 
+const AUTH_STORAGE_KEY = "saa_auth";
+
+function lerAuth() {
+  try {
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+let auth = lerAuth();
+
+function salvarAuth(auth) {
+  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(auth));
+}
+
+function limparAuth() {
+  localStorage.removeItem(AUTH_STORAGE_KEY);
+}
+
+function authAdmin() {
+  return auth && auth.role === "admin";
+}
+
+const authStatus = document.getElementById("authStatus");
+const authLink = document.getElementById("authLink");
+const registerLink = document.getElementById("registerLink");
+const profileLink = document.getElementById("profileLink");
+const logoutBtn = document.getElementById("logoutBtn");
+const adminSection = document.getElementById("adminSection");
+const loginModal = document.getElementById("loginModal");
+const loginModalClose = document.getElementById("loginModalClose");
+
+function atualizarAuthUI() {
+  if (authStatus) {
+    authStatus.textContent = auth ? `Logado: ${auth.email} (${auth.role})` : "Visitante";
+  }
+  if (authLink) {
+    authLink.classList.toggle("is-hidden", !!auth);
+  }
+  if (registerLink) {
+    registerLink.classList.toggle("is-hidden", !!auth);
+  }
+  if (profileLink) {
+    profileLink.classList.toggle("is-hidden", !auth);
+  }
+  if (logoutBtn) {
+    logoutBtn.classList.toggle("is-hidden", !auth);
+  }
+  if (adminSection) {
+    adminSection.classList.toggle("is-hidden", !authAdmin());
+  }
+}
+
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", function () {
+    limparAuth();
+    auth = null;
+    atualizarAuthUI();
+    mostrarAnimais();
+  });
+}
+
+function exigirLoginOuAvisar() {
+  if (auth) return true;
+  if (loginModal) {
+    loginModal.classList.remove("modal-hidden");
+  }
+  return false;
+}
+
+if (loginModalClose && loginModal) {
+  loginModalClose.addEventListener("click", function () {
+    loginModal.classList.add("modal-hidden");
+  });
+}
+
+if (loginModal) {
+  loginModal.addEventListener("click", function (event) {
+    if (event.target === loginModal) {
+      loginModal.classList.add("modal-hidden");
+    }
+  });
+}
+
+document.addEventListener("keydown", function (event) {
+  if (event.key === "Escape" && loginModal && !loginModal.classList.contains("modal-hidden")) {
+    loginModal.classList.add("modal-hidden");
+  }
+});
+
+document.addEventListener("click", function (event) {
+  const alvo = event.target.closest("button, a.btn, .btn-link");
+  if (!alvo) return;
+  if (auth) return;
+  if (alvo.classList.contains("btn-filter")) return;
+  if (alvo.dataset.public === "true") return;
+  if (alvo.id === "authLink" || alvo.id === "registerLink" || alvo.id === "logoutBtn") return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  exigirLoginOuAvisar();
+});
+
 let animais = [];
 
 const lista = document.getElementById("listaAnimais");
@@ -163,6 +267,14 @@ function mostrarAnimais(listaFiltrada = animais) {
     const imgHtml = animal.foto
       ? `<img src="${animal.foto}" alt="${animal.nome}">`
       : `<div class="sem-foto">Sem foto</div>`;
+    const botaoRemover = authAdmin()
+      ? `
+        <button type="button" class="btn btn-delete" data-remover-id="${animal.id}">
+          <i class="fas fa-trash"></i> Remover
+        </button>
+      `
+      : "";
+
     card.innerHTML = `
       ${imgHtml}
       <h3>${animal.nome}</h3>
@@ -176,10 +288,7 @@ function mostrarAnimais(listaFiltrada = animais) {
             <i class="fab fa-whatsapp"></i> Falar com o protetor
           </button>
         </a>
-
-        <button type="button" class="btn btn-delete" data-remover-id="${animal.id}">
-          <i class="fas fa-trash"></i> Remover
-        </button>
+        ${botaoRemover}
       </div>
     `;
     const btnRemover = card.querySelector("[data-remover-id]");
@@ -199,10 +308,19 @@ function mostrarAnimais(listaFiltrada = animais) {
 async function removerAnimal(id) {
   const n = Number(id);
   if (!Number.isFinite(n) || n < 1) return;
+  if (!authAdmin()) {
+    alert("Você não tem permissão para remover animais.");
+    return;
+  }
   if (!confirm("Remover este animal da lista?")) return;
   try {
     const apiBase = await obterApiBase();
-    const res = await fetch(apiBase + "/animais/" + n, { method: "DELETE" });
+    const res = await fetch(apiBase + "/animais/" + n, {
+      method: "DELETE",
+      headers: {
+        Authorization: auth ? `Bearer ${auth.token}` : "",
+      },
+    });
     if (!res.ok) throw new Error();
     await carregarAnimais();
   } catch {
@@ -214,6 +332,10 @@ const form = document.getElementById("formAnimal");
 if (form) {
   form.addEventListener("submit", async function (e) {
     e.preventDefault();
+    if (!authAdmin()) {
+      alert("Você não tem permissão para cadastrar animais.");
+      return;
+    }
     let nome = document.getElementById("nome").value;
     let especie = document.getElementById("especie").value;
     let porte = document.getElementById("porte").value;
@@ -232,7 +354,10 @@ if (form) {
       const apiBase = await obterApiBase();
       const res = await fetch(apiBase + "/animais", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: auth ? `Bearer ${auth.token}` : "",
+        },
         body: JSON.stringify({
           nome,
           especie,
@@ -255,6 +380,8 @@ const formAdotante = document.getElementById("formAdotante");
 if (formAdotante) {
   formAdotante.addEventListener("submit", async function (e) {
     e.preventDefault();
+
+    if (!exigirLoginOuAvisar()) return;
 
     const nomeAdotante = document.getElementById("nomeAdotante");
     const telefoneAdotante = document.getElementById("telefoneAdotante");
@@ -343,4 +470,5 @@ async function carregarAnimais(filtros = {}) {
   }
 }
 
+atualizarAuthUI();
 carregarAnimais();

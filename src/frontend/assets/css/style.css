@@ -43,6 +43,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
 }
 
 .nav-logo {
@@ -60,6 +61,18 @@ body {
   padding: 0.5rem 1rem;
   border-radius: 50px;
   font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.auth-status {
+  color: var(--text-white);
   font-size: 0.9rem;
 }
 
@@ -222,6 +235,19 @@ textarea {
   justify-content: center;
 }
 
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--text-white);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
 .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 20px var(--shadow-yellow);
@@ -361,6 +387,65 @@ textarea {
 .btn-delete:hover {
   box-shadow: 0 10px 25px rgba(239, 68, 68, 0.4);
   transform: translateY(-2px);
+}
+
+.is-hidden {
+  display: none !important;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 2000;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.modal-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.modal-hidden .modal-content {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.modal-content h3 {
+  color: var(--primary-purple);
+  margin-bottom: 0.75rem;
+}
+
+.modal-content p {
+  color: #6b7280;
+  margin-bottom: 1.5rem;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 /* ===== CHAT BOX ===== */
