@@ -162,6 +162,8 @@ async function initDb() {
         senha_hash TEXT NOT NULL,
         senha_salt TEXT NOT NULL,
         role VARCHAR(20) NOT NULL DEFAULT 'cliente',
+        name VARCHAR(100),
+        icon TEXT,
         criado_em TIMESTAMP NOT NULL DEFAULT NOW()
       );
     `);
@@ -171,9 +173,17 @@ async function initDb() {
         email VARCHAR(255) UNIQUE NOT NULL,
         senha_hash TEXT NOT NULL,
         senha_salt TEXT NOT NULL,
+        role VARCHAR(20) NOT NULL DEFAULT 'cliente',
+        name VARCHAR(100),
+        icon TEXT,
         criado_em TIMESTAMP NOT NULL DEFAULT NOW()
       );
     `);
+    await pool.query(`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS name VARCHAR(100);`);
+    await pool.query(`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS icon TEXT;`);
+    await pool.query(`ALTER TABLE usuarios_clientes ADD COLUMN IF NOT EXISTS role VARCHAR(20) NOT NULL DEFAULT 'cliente';`);
+    await pool.query(`ALTER TABLE usuarios_clientes ADD COLUMN IF NOT EXISTS name VARCHAR(100);`);
+    await pool.query(`ALTER TABLE usuarios_clientes ADD COLUMN IF NOT EXISTS icon TEXT;`);
     await pool.query(`
       CREATE TABLE IF NOT EXISTS interesses_adocao (
         id SERIAL PRIMARY KEY,
@@ -284,7 +294,7 @@ app.post("/auth/login", async (req, res) => {
 
     const emailNormalizado = email.trim().toLowerCase();
     const adminResult = await pool.query(
-      "SELECT id, email, senha_hash, senha_salt, role FROM usuarios WHERE email = $1",
+      "SELECT id, email, senha_hash, senha_salt, role, name, icon FROM usuarios WHERE email = $1",
       [emailNormalizado]
     );
 
@@ -296,11 +306,17 @@ app.post("/auth/login", async (req, res) => {
       }
 
       const token = gerarToken(usuarioAdmin);
-      return res.json({ token, role: usuarioAdmin.role, email: usuarioAdmin.email });
+      return res.json({
+        token,
+        role: usuarioAdmin.role,
+        email: usuarioAdmin.email,
+        name: usuarioAdmin.name || null,
+        icon: usuarioAdmin.icon || null,
+      });
     }
 
     const clienteResult = await pool.query(
-      "SELECT id, email, senha_hash, senha_salt FROM usuarios_clientes WHERE email = $1",
+      "SELECT id, email, senha_hash, senha_salt, name, icon FROM usuarios_clientes WHERE email = $1",
       [emailNormalizado]
     );
 
@@ -319,10 +335,76 @@ app.post("/auth/login", async (req, res) => {
       email: usuarioCliente.email,
       role: "cliente",
     });
-    res.json({ token, role: "cliente", email: usuarioCliente.email });
+    res.json({
+      token,
+      role: "cliente",
+      email: usuarioCliente.email,
+      name: usuarioCliente.name || null,
+      icon: usuarioCliente.icon || null,
+    });
   } catch (err) {
     logger.error("POST /auth/login - Erro ao autenticar", err);
     res.status(500).json({ erro: "Não foi possível autenticar." });
+  }
+});
+
+app.get("/auth/profile", exigirAuth, async (req, res) => {
+  try {
+    const tabela = req.usuario.role === "admin" ? "usuarios" : "usuarios_clientes";
+    const result = await pool.query(
+      `SELECT email, name, icon FROM ${tabela} WHERE id = $1`,
+      [req.usuario.sub]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ erro: "Usuário não encontrado." });
+    }
+
+    const perfil = result.rows[0];
+    res.json({
+      email: perfil.email,
+      role: req.usuario.role,
+      name: perfil.name || null,
+      icon: perfil.icon || null,
+    });
+  } catch (err) {
+    logger.error("GET /auth/profile - Erro ao carregar perfil", err);
+    res.status(500).json({ erro: "Não foi possível carregar o perfil." });
+  }
+});
+
+app.put("/auth/profile", exigirAuth, async (req, res) => {
+  try {
+    const { name, icon } = req.body;
+    if (typeof name !== "string" || !name.trim()) {
+      return res.status(400).json({ erro: "Nome de usuário inválido." });
+    }
+
+    const nomeTrimmed = name.trim();
+    if (nomeTrimmed.length < TAMANHO_MINIMO_NOME || nomeTrimmed.length > TAMANHO_MAXIMO_NOME) {
+      return res.status(400).json({ erro: `Nome deve ter entre ${TAMANHO_MINIMO_NOME} e ${TAMANHO_MAXIMO_NOME} caracteres.` });
+    }
+
+    if (icon !== undefined && icon !== null) {
+      if (typeof icon !== "string" || !icon.startsWith("data:image/")) {
+        return res.status(400).json({ erro: "Icone deve ser uma imagem válida em base64." });
+      }
+      const estimatedSize = (icon.length * 3) / 4;
+      if (estimatedSize > TAMANHO_MAXIMO_IMAGEM) {
+        return res.status(400).json({ erro: "Icone é muito grande. Máximo permitido: 2MB." });
+      }
+    }
+
+    const tabela = req.usuario.role === "admin" ? "usuarios" : "usuarios_clientes";
+    await pool.query(
+      `UPDATE ${tabela} SET name = $1, icon = $2 WHERE id = $3`,
+      [nomeTrimmed, icon || null, req.usuario.sub]
+    );
+
+    res.json({ email: req.usuario.email, role: req.usuario.role, name: nomeTrimmed, icon: icon || null });
+  } catch (err) {
+    logger.error("PUT /auth/profile - Erro ao atualizar perfil", err);
+    res.status(500).json({ erro: "Não foi possível atualizar o perfil." });
   }
 });
 

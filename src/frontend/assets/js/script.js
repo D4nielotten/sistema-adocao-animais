@@ -68,7 +68,8 @@ const loginModalClose = document.getElementById("loginModalClose");
 
 function atualizarAuthUI() {
   if (authStatus) {
-    authStatus.textContent = auth ? `Logado: ${auth.email} (${auth.role})` : "Visitante";
+    const nomeExibicao = auth ? auth.name || auth.email : "Visitante";
+    authStatus.textContent = auth ? `Logado como ${nomeExibicao} (${auth.role})` : "Visitante";
   }
   if (authLink) {
     authLink.classList.toggle("is-hidden", !!auth);
@@ -274,6 +275,7 @@ function mostrarAnimais(listaFiltrada = animais) {
         </button>
       `
       : "";
+    const botoesClasse = auth && auth.role === "cliente" ? "card-buttons card-buttons-single" : "card-buttons";
 
     card.innerHTML = `
       ${imgHtml}
@@ -282,7 +284,7 @@ function mostrarAnimais(listaFiltrada = animais) {
       <p><b>Porte:</b> ${animal.porte}</p>
       <p>${animal.descricao || ""}</p>
 
-      <div class="card-buttons">
+      <div class="${botoesClasse}">
         <a href="https://wa.me/5511999999999?text=Olá! Tenho interesse em adotar ${animal.nome}" target="_blank" class="btn-link">
           <button class="btn btn-contact">
             <i class="fab fa-whatsapp"></i> Falar com o protetor

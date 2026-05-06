@@ -26,9 +26,32 @@
     </div>
 
     <div class="form-card" id="perfilCard">
-      <p><strong>Email:</strong> <span id="perfilEmail">-</span></p>
-      <p><strong>Tipo de conta:</strong> <span id="perfilRole">-</span></p>
-      <button id="perfilLogout" class="btn btn-primary" type="button">Sair</button>
+      <div class="profile-top">
+        <div class="avatar-wrapper">
+          <img id="avatarPreview" class="image-preview" alt="Avatar de perfil">
+          <div id="avatarFallback" class="avatar-fallback">
+            <i class="fas fa-user"></i>
+          </div>
+        </div>
+        <div class="profile-top-content">
+          <label class="file-label" for="perfilFoto">Escolher novo ícone</label>
+          <input type="file" id="perfilFoto" accept="image/png, image/jpeg, image/webp">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="perfilNome"><strong>Nome de usuário:</strong></label>
+        <input type="text" id="perfilNome" placeholder="Digite seu nome de usuário">
+      </div>
+
+      <p class="profile-text"><strong>Email:</strong> <span id="perfilEmail">-</span></p>
+      <p class="profile-text"><strong>Tipo de conta:</strong> <span id="perfilRole">-</span></p>
+
+      <div class="form-row">
+        <button id="perfilSalvar" class="btn btn-primary" type="button">Salvar alterações</button>
+        <button id="perfilLogout" class="btn btn-secondary" type="button">Sair</button>
+      </div>
+      <p class="success-message" id="perfilMensagem"></p>
     </div>
   </section>
 

@@ -58,7 +58,13 @@ if (formLogin) {
 
       if (!res.ok) throw new Error();
       const data = await res.json();
-      salvarAuth({ token: data.token, role: data.role, email: data.email });
+      salvarAuth({
+        token: data.token,
+        role: data.role,
+        email: data.email,
+        name: data.name || null,
+        icon: data.icon || null,
+      });
       window.location.href = "index.html";
     } catch {
       alert("Nao foi possivel entrar. Verifique suas credenciais.");
