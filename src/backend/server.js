@@ -19,7 +19,7 @@ const logger = {
   error: (msg, err) => console.error(`[ERROR] ${new Date().toISOString()} - ${msg}`, err?.message || err || ""),
 };
 
-const ESPECIES_VALIDAS = ["cao", "gato"];
+const ESPECIES_VALIDAS = ["cao", "gato", "outros"];
 const PORTES_VALIDOS = ["Pequeno", "Médio", "Grande"];
 const TAMANHO_MAXIMO_IMAGEM = 2 * 1024 * 1024;
 const TAMANHO_MAXIMO_NOME = 100;
@@ -604,8 +604,12 @@ app.get("/animais", async (req, res) => {
     const valores = [];
 
     if (especie) {
-      valores.push(especie);
-      filtros.push(`LOWER(especie) = LOWER($${valores.length})`);
+      if (especie.toLowerCase() === "outros") {
+        filtros.push(`LOWER(especie) NOT IN ('cao', 'gato')`);
+      } else {
+        valores.push(especie);
+        filtros.push(`LOWER(especie) = LOWER($${valores.length})`);
+      }
     }
 
     if (porte) {
