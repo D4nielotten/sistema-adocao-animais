@@ -51,6 +51,7 @@ function exibirModal(titulo, mensagem, tipo = 'info') {
   const modalTitle = document.getElementById('modalTitle');
   const modalMessage = document.getElementById('modalMessage');
   const modalIcon = document.getElementById('modalIcon');
+  const modalButtons = document.getElementById('modalButtons') || document.querySelector('.modal-buttons');
   
   if (!modal) return;
   
@@ -73,6 +74,10 @@ function exibirModal(titulo, mensagem, tipo = 'info') {
   } else {
     modalIcon.innerHTML = '<i class="fas fa-info-circle"></i>';
     modalIcon.classList.add('info');
+  }
+
+  if (modalButtons) {
+    modalButtons.innerHTML = '<button class="modal-btn modal-btn-primary" onclick="fecharModal()">OK</button>';
   }
   
   modal.classList.add('active');
