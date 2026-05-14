@@ -38,6 +38,87 @@ function salvarAuth(auth) {
   localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(auth));
 }
 
+// Função de Modal Customizado
+function exibirModal(titulo, mensagem, tipo = 'info') {
+  const modal = document.getElementById('customModal');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalMessage = document.getElementById('modalMessage');
+  const modalIcon = document.getElementById('modalIcon');
+  
+  if (!modal) return;
+  
+  modalTitle.textContent = titulo;
+  modalMessage.textContent = mensagem;
+  
+  // Limpar classes anteriores de ícone
+  modalIcon.className = 'modal-icon';
+  
+  // Adicionar ícone baseado no tipo
+  if (tipo === 'success') {
+    modalIcon.innerHTML = '<i class="fas fa-check-circle"></i>';
+    modalIcon.classList.add('success');
+  } else if (tipo === 'error') {
+    modalIcon.innerHTML = '<i class="fas fa-exclamation-circle"></i>';
+    modalIcon.classList.add('error');
+  } else if (tipo === 'warning') {
+    modalIcon.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+    modalIcon.classList.add('warning');
+  } else {
+    modalIcon.innerHTML = '<i class="fas fa-info-circle"></i>';
+    modalIcon.classList.add('info');
+  }
+  
+  modal.classList.add('active');
+}
+
+function fecharModal() {
+  const modal = document.getElementById('customModal');
+  if (modal) {
+    modal.classList.remove('active');
+  }
+}
+
+// Fechar modal ao clicar fora
+document.addEventListener('click', function(e) {
+  const modal = document.getElementById('customModal');
+  if (e.target === modal) {
+    fecharModal();
+  }
+});
+
+// Função de Modal de Confirmação
+function exibirConfirmacao(titulo, mensagem) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('customModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalMessage = document.getElementById('modalMessage');
+    const modalIcon = document.getElementById('modalIcon');
+    const modalButtons = document.getElementById('modalButtons') || document.querySelector('.modal-buttons');
+    
+    if (!modal || !modalButtons) return resolve(false);
+    
+    modalTitle.textContent = titulo;
+    modalMessage.textContent = mensagem;
+    
+    modalIcon.className = 'modal-icon warning';
+    modalIcon.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+    
+    // Limpar botões anteriores
+    modalButtons.innerHTML = `
+      <button class="modal-btn modal-btn-secondary" onclick="fecharConfirmacao(false)">Cancelar</button>
+      <button class="modal-btn modal-btn-primary" onclick="fecharConfirmacao(true)">Confirmar</button>
+    `;
+    
+    // Armazenar a função resolve para usar no onclick
+    window.fecharConfirmacao = function(resultado) {
+      fecharModal();
+      resolve(resultado);
+    };
+    
+    modal.classList.add('active');
+  });
+}
+
 const formLogin = document.getElementById("formLogin");
 const formRegister = document.getElementById("formRegister");
 
@@ -67,7 +148,7 @@ if (formLogin) {
       });
       window.location.href = "index.html";
     } catch {
-      alert("Nao foi possivel entrar. Verifique suas credenciais.");
+      exibirModal('Erro de Login', 'Não foi possível entrar. Verifique suas credenciais.', 'error');
     }
   });
 }
@@ -88,10 +169,10 @@ if (formRegister) {
       });
 
       if (!res.ok) throw new Error();
-      alert("Cadastro realizado. Agora faca login.");
+      exibirModal('Cadastro Realizado!', 'Sua conta foi criada com sucesso. Agora faça login.', 'success');
       formRegister.reset();
     } catch {
-      alert("Nao foi possivel cadastrar. Email pode ja existir.");
+      exibirModal('Erro de Cadastro', 'Não foi possível cadastrar. Este email pode já estar registrado.', 'error');
     }
   });
 }
