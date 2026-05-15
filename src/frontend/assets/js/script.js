@@ -45,6 +45,92 @@ function lerAuth() {
 
 let auth = lerAuth();
 
+// Função de Modal Customizado
+function exibirModal(titulo, mensagem, tipo = 'info') {
+  const modal = document.getElementById('customModal');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalMessage = document.getElementById('modalMessage');
+  const modalIcon = document.getElementById('modalIcon');
+  const modalButtons = document.getElementById('modalButtons') || document.querySelector('.modal-buttons');
+  
+  if (!modal) return;
+  
+  modalTitle.textContent = titulo;
+  modalMessage.textContent = mensagem;
+  
+  // Limpar classes anteriores de ícone
+  modalIcon.className = 'modal-icon';
+  
+  // Adicionar ícone baseado no tipo
+  if (tipo === 'success') {
+    modalIcon.innerHTML = '<i class="fas fa-check-circle"></i>';
+    modalIcon.classList.add('success');
+  } else if (tipo === 'error') {
+    modalIcon.innerHTML = '<i class="fas fa-exclamation-circle"></i>';
+    modalIcon.classList.add('error');
+  } else if (tipo === 'warning') {
+    modalIcon.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+    modalIcon.classList.add('warning');
+  } else {
+    modalIcon.innerHTML = '<i class="fas fa-info-circle"></i>';
+    modalIcon.classList.add('info');
+  }
+
+  if (modalButtons) {
+    modalButtons.innerHTML = '<button class="modal-btn modal-btn-primary" onclick="fecharModal()">OK</button>';
+  }
+  
+  modal.classList.add('active');
+}
+
+function fecharModal() {
+  const modal = document.getElementById('customModal');
+  if (modal) {
+    modal.classList.remove('active');
+  }
+}
+
+// Fechar modal ao clicar fora
+document.addEventListener('click', function(e) {
+  const modal = document.getElementById('customModal');
+  if (e.target === modal) {
+    fecharModal();
+  }
+});
+
+// Função de Modal de Confirmação
+function exibirConfirmacao(titulo, mensagem) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('customModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalMessage = document.getElementById('modalMessage');
+    const modalIcon = document.getElementById('modalIcon');
+    const modalButtons = document.getElementById('modalButtons') || document.querySelector('.modal-buttons');
+    
+    if (!modal || !modalButtons) return resolve(false);
+    
+    modalTitle.textContent = titulo;
+    modalMessage.textContent = mensagem;
+    
+    modalIcon.className = 'modal-icon warning';
+    modalIcon.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+    
+    // Limpar botões anteriores
+    modalButtons.innerHTML = `
+      <button class="modal-btn modal-btn-secondary" onclick="fecharConfirmacao(false)">Cancelar</button>
+      <button class="modal-btn modal-btn-primary" onclick="fecharConfirmacao(true)">Remover</button>
+    `;
+    
+    // Armazenar a função resolve para usar no onclick
+    window.fecharConfirmacao = function(resultado) {
+      fecharModal();
+      resolve(resultado);
+    };
+    
+    modal.classList.add('active');
+  });
+}
+
 function salvarAuth(auth) {
   localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(auth));
 }
@@ -68,7 +154,8 @@ const loginModalClose = document.getElementById("loginModalClose");
 
 function atualizarAuthUI() {
   if (authStatus) {
-    authStatus.textContent = auth ? `Logado: ${auth.email} (${auth.role})` : "Visitante";
+    const nomeExibicao = auth ? auth.name || auth.email : "Visitante";
+    authStatus.textContent = auth ? `Logado como ${nomeExibicao} (${auth.role})` : "Visitante";
   }
   if (authLink) {
     authLink.classList.toggle("is-hidden", !!auth);
@@ -274,6 +361,7 @@ function mostrarAnimais(listaFiltrada = animais) {
         </button>
       `
       : "";
+    const botoesClasse = auth && auth.role === "cliente" ? "card-buttons card-buttons-single" : "card-buttons";
 
     card.innerHTML = `
       ${imgHtml}
@@ -282,7 +370,7 @@ function mostrarAnimais(listaFiltrada = animais) {
       <p><b>Porte:</b> ${animal.porte}</p>
       <p>${animal.descricao || ""}</p>
 
-      <div class="card-buttons">
+      <div class="${botoesClasse}">
         <a href="https://wa.me/5511999999999?text=Olá! Tenho interesse em adotar ${animal.nome}" target="_blank" class="btn-link">
           <button class="btn btn-contact">
             <i class="fab fa-whatsapp"></i> Falar com o protetor
@@ -309,10 +397,11 @@ async function removerAnimal(id) {
   const n = Number(id);
   if (!Number.isFinite(n) || n < 1) return;
   if (!authAdmin()) {
-    alert("Você não tem permissão para remover animais.");
+    exibirModal('Permissão Negada', 'Você não tem permissão para remover animais.', 'error');
     return;
   }
-  if (!confirm("Remover este animal da lista?")) return;
+  const confirmou = await exibirConfirmacao('Confirmar Remoção', 'Tem certeza que deseja remover este animal?');
+  if (!confirmou) return;
   try {
     const apiBase = await obterApiBase();
     const res = await fetch(apiBase + "/animais/" + n, {
@@ -323,8 +412,9 @@ async function removerAnimal(id) {
     });
     if (!res.ok) throw new Error();
     await carregarAnimais();
+    exibirModal('Sucesso!', 'Animal removido com sucesso!', 'success');
   } catch {
-    alert("Não foi possível remover o animal.");
+    exibirModal('Erro', 'Não foi possível remover o animal.', 'error');
   }
 }
 
@@ -333,7 +423,7 @@ if (form) {
   form.addEventListener("submit", async function (e) {
     e.preventDefault();
     if (!authAdmin()) {
-      alert("Você não tem permissão para cadastrar animais.");
+      exibirModal('Permissão Negada', 'Você não tem permissão para cadastrar animais.', 'error');
       return;
     }
     let nome = document.getElementById("nome").value;
@@ -343,7 +433,7 @@ if (form) {
     let fotoInput = document.getElementById("foto");
     let arquivo = fotoInput.files[0];
     if (!arquivo) {
-      alert("Escolha uma imagem");
+      exibirModal('Aviso', 'Por favor, escolha uma imagem para o animal.', 'warning');
       return;
     }
     
@@ -369,9 +459,9 @@ if (form) {
       if (!res.ok) throw new Error();
       form.reset();
       await carregarAnimais();
-      alert("Animal cadastrado!");
+      exibirModal('Sucesso!', 'Animal cadastrado com sucesso!', 'success');
     } catch {
-      alert("Erro ao cadastrar. Verifique se o servidor e o PostgreSQL estão rodando.");
+      exibirModal('Erro', 'Erro ao cadastrar. Verifique se o servidor e o PostgreSQL estão rodando.', 'error');
     }
   });
 }
@@ -388,7 +478,7 @@ if (formAdotante) {
     const animalInteresse = document.getElementById("animalInteresse");
 
     if (!nomeAdotante || !telefoneAdotante || !animalInteresse) {
-      alert("Não foi possível capturar os dados do formulário de interesse.");
+      exibirModal('Erro', 'Não foi possível capturar os dados do formulário de interesse.', 'error');
       return;
     }
 
@@ -409,9 +499,9 @@ if (formAdotante) {
       if (!res.ok) throw new Error();
 
       formAdotante.reset();
-      alert("Interesse enviado com sucesso!");
+      exibirModal('Sucesso!', 'Seu interesse foi registrado com sucesso!', 'success');
     } catch {
-      alert("Não foi possível registrar seu interesse agora. Tente novamente.");
+      exibirModal('Erro', 'Não foi possível registrar seu interesse agora. Tente novamente.', 'error');
     }
   });
 
